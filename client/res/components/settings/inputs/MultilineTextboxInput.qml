@@ -31,20 +31,31 @@ FocusScope {
   property string description: ""
   readonly property var currentValue: setting ? setting.currentValue : undefined
   readonly property string text: control.text
+  property bool edited: false
+  property bool initialized: false
+  property bool updatingText: false
 
   Layout.fillWidth: true
   implicitHeight: content.implicitHeight
 
   function updateText() {
-    if(!control.activeFocus && currentValue !== undefined &&
-       control.text !== currentValue) {
+    if(currentValue === undefined || edited)
+      return
+
+    if(control.text !== currentValue) {
+      updatingText = true
       control.text = currentValue
+      updatingText = false
     }
   }
 
   function apply() {
-    if(setting && setting.currentValue !== control.text)
+    if(!edited || !setting || setting.currentValue === undefined)
+      return
+
+    if(setting.currentValue !== control.text)
       setting.currentValue = control.text
+    edited = false
   }
 
   onCurrentValueChanged: updateText()
@@ -89,6 +100,11 @@ FocusScope {
           font.pixelSize: Theme.settings.inputLabelTextPx
           background: Item {}
 
+          onTextChanged: {
+            if(root.initialized && !root.updatingText)
+              root.edited = true
+          }
+
           onActiveFocusChanged: {
             if(!control.activeFocus)
               root.apply()
@@ -103,5 +119,8 @@ FocusScope {
     }
   }
 
-  Component.onCompleted: updateText()
+  Component.onCompleted: {
+    updateText()
+    initialized = true
+  }
 }
