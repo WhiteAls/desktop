@@ -118,6 +118,19 @@ namespace Uapi
             std::end(awgKeys);
     }
 
+    QLatin1String valueForLog(Key key, const QLatin1String &value)
+    {
+        switch(key)
+        {
+            case Key::PrivateKey:
+            case Key::PublicKey:
+            case Key::PresharedKey:
+                return QLatin1String{"<redacted>"};
+            default:
+                return value;
+        }
+    }
+
     std::unordered_map<QLatin1String, Key> lookupKey{
         // Set result keys
         {errNo, Key::ErrNo},
@@ -588,13 +601,13 @@ void WireguardConfigDeviceTask::receiveValue(Uapi::Key key, const QLatin1String 
 {
     if(!isPending())
     {
-        qWarning() << "Unexpected IPC value:" << traceEnum(key) << "-" << value
-            << "for finished IPC task";
+        qWarning() << "Unexpected IPC value:" << traceEnum(key) << "-"
+            << Uapi::valueForLog(key, value) << "for finished IPC task";
     }
     else if(key != Uapi::Key::ErrNo)
     {
         qWarning() << "Unexpected key type:" << traceEnum(key) << "-"
-            << value;
+            << Uapi::valueForLog(key, value);
         reject(Error{HERE, Error::Code::Unknown});
     }
     else
@@ -663,7 +676,7 @@ void WireguardDeviceStatusTask::applyValue(Uapi::Key key, const QLatin1String &v
     {
         default:
             qWarning() << "Unexpected key type:" << traceEnum(key) << "-"
-                << value;
+                << Uapi::valueForLog(key, value);
             throw Error{HERE, Error::Code::Unknown};
         case Uapi::Key::ErrNo:
             _errno = Uapi::parseInt<int>(value);
@@ -747,8 +760,8 @@ void WireguardDeviceStatusTask::receiveValue(Uapi::Key key, const QLatin1String 
     }
     catch(const Error &err)
     {
-        qWarning() << "Invalid IPC value:" << traceEnum(key) << "-" << value
-            << "error:" << err;
+        qWarning() << "Invalid IPC value:" << traceEnum(key) << "-"
+            << Uapi::valueForLog(key, value) << "error:" << err;
     }
 }
 

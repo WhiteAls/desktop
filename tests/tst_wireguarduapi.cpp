@@ -19,6 +19,7 @@
 #include "daemon/src/wireguarduapi.h"
 #include <QtTest>
 #include <QLocalServer>
+#include <algorithm>
 #include <limits>
 
 #if defined(Q_OS_WIN)
@@ -100,6 +101,15 @@ namespace
         QLocalSocket *_serverSocket{};
     };
 
+    int countMessagesContaining(const QStringList &messages,
+                                const QString &needle)
+    {
+        return std::count_if(messages.begin(), messages.end(),
+            [&needle](const QString &message)
+            {
+                return message.contains(needle);
+            });
+    }
 }
 
 
@@ -150,6 +160,48 @@ private slots:
         QCOMPARE(warnings.warnings().size(), 1);
         QVERIFY(warnings.warnings().front().contains(
             QStringLiteral("ordinary_unknown=visible-value")));
+    }
+
+    void testMalformedSecretValuesAreRedacted()
+    {
+        const QByteArray privateValue{"seeded-private-secret"};
+        const QByteArray publicValue{"seeded-public-secret"};
+        const QByteArray presharedValue{"seeded-preshared-secret"};
+        const auto response =
+            QByteArrayLiteral("private_key=") + privateValue + '\n' +
+            QByteArrayLiteral("public_key=") + publicValue + '\n' +
+            QByteArrayLiteral("preshared_key=") + presharedValue + '\n' +
+            QByteArrayLiteral("errno=0\n");
+
+        QStringList statusMessages;
+        {
+            LocalSocketPair sockets;
+            WireguardDeviceStatusTask task{sockets.client()};
+            WarningCapture warnings;
+            sockets.write(response);
+            QTRY_COMPARE(countMessagesContaining(warnings.warnings(),
+                                                 QStringLiteral("<redacted>")), 3);
+            statusMessages = warnings.warnings();
+        }
+
+        QStringList configMessages;
+        {
+            LocalSocketPair sockets;
+            wg_device device{};
+            WireguardConfigDeviceTask task{sockets.client(), device};
+            WarningCapture warnings;
+            sockets.write(response);
+            QTRY_COMPARE(countMessagesContaining(warnings.warnings(),
+                                                 QStringLiteral("<redacted>")), 3);
+            configMessages = warnings.warnings();
+        }
+
+        const auto allWarnings = statusMessages + configMessages;
+        for(const auto &secret : {privateValue, publicValue, presharedValue})
+        {
+            for(const auto &warning : allWarnings)
+                QVERIFY(!warning.contains(QString::fromLatin1(secret)));
+        }
     }
 
     void testParseLongLong()
