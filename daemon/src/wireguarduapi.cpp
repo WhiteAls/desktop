@@ -21,6 +21,7 @@
 
 #include "wireguarduapi.h"
 #include "wireguardbackend.h"
+#include <algorithm>
 #include <unordered_map>
 #include <cstdlib>
 #include <type_traits>
@@ -91,6 +92,31 @@ namespace Uapi
         ProtocolVersion,
     };
     Q_ENUM_NS(Key);
+
+    const QLatin1String awgKeys[]{
+        QLatin1String{"jc"},
+        QLatin1String{"jmin"},
+        QLatin1String{"jmax"},
+        QLatin1String{"s1"},
+        QLatin1String{"s2"},
+        QLatin1String{"s3"},
+        QLatin1String{"s4"},
+        QLatin1String{"h1"},
+        QLatin1String{"h2"},
+        QLatin1String{"h3"},
+        QLatin1String{"h4"},
+        QLatin1String{"i1"},
+        QLatin1String{"i2"},
+        QLatin1String{"i3"},
+        QLatin1String{"i4"},
+        QLatin1String{"i5"},
+    };
+
+    bool isAwgKey(const QLatin1String &key)
+    {
+        return std::find(std::begin(awgKeys), std::end(awgKeys), key) !=
+            std::end(awgKeys);
+    }
 
     std::unordered_map<QLatin1String, Key> lookupKey{
         // Set result keys
@@ -426,6 +452,9 @@ void WireguardIpc::processLine(const QByteArray &line)
 
         QLatin1String key{line.data(), line.data()+keyEndIdx};
         QLatin1String value{line.data()+keyEndIdx+1, line.data()+line.size()};
+        if(Uapi::isAwgKey(key))
+            return;
+
         auto itKeyMatch = Uapi::lookupKey.find(key);
         if(itKeyMatch == Uapi::lookupKey.end())
         {

@@ -18,6 +18,7 @@
 
 #include "daemon/src/wireguarduapi.h"
 #include <QtTest>
+#include <QLocalServer>
 #include <limits>
 
 #if defined(Q_OS_WIN)
@@ -30,6 +31,75 @@ namespace
 {
     // Dummy key name for messages
     const QLatin1String dummyKey{"dummy"};
+
+    QStringList *capturedWarnings{};
+    QtMessageHandler priorMessageHandler{};
+
+    void captureWarnings(QtMsgType type, const QMessageLogContext &context,
+                         const QString &message)
+    {
+        if(type == QtWarningMsg && capturedWarnings)
+            capturedWarnings->push_back(message);
+        else if(priorMessageHandler)
+            priorMessageHandler(type, context, message);
+    }
+
+    class WarningCapture
+    {
+    public:
+        WarningCapture()
+        {
+            Q_ASSERT(!capturedWarnings);
+            capturedWarnings = &_warnings;
+            priorMessageHandler = qInstallMessageHandler(captureWarnings);
+        }
+
+        ~WarningCapture()
+        {
+            qInstallMessageHandler(priorMessageHandler);
+            priorMessageHandler = nullptr;
+            capturedWarnings = nullptr;
+        }
+
+        const QStringList &warnings() const { return _warnings; }
+
+    private:
+        QStringList _warnings;
+    };
+
+    class LocalSocketPair
+    {
+    public:
+        LocalSocketPair()
+            : _client{std::make_shared<QLocalSocket>()}
+        {
+            static unsigned instance{};
+            const auto name = QStringLiteral("pia-uapi-test-%1-%2")
+                .arg(QCoreApplication::applicationPid()).arg(++instance);
+            QLocalServer::removeServer(name);
+            Q_ASSERT(_server.listen(name));
+            _client->connectToServer(name);
+            Q_ASSERT(_client->waitForConnected());
+            Q_ASSERT(_server.waitForNewConnection());
+            _serverSocket = _server.nextPendingConnection();
+            Q_ASSERT(_serverSocket);
+        }
+
+        std::shared_ptr<QLocalSocket> client() const { return _client; }
+
+        void write(const QByteArray &message)
+        {
+            QCOMPARE(_serverSocket->write(message), message.size());
+            if(_serverSocket->bytesToWrite())
+                QVERIFY(_serverSocket->waitForBytesWritten());
+        }
+
+    private:
+        QLocalServer _server;
+        std::shared_ptr<QLocalSocket> _client;
+        QLocalSocket *_serverSocket{};
+    };
+
 }
 
 
@@ -38,6 +108,50 @@ class tst_wireguarduapi : public QObject
     Q_OBJECT
 
 private slots:
+    void testAwgResponseFieldsAreIgnored()
+    {
+        LocalSocketPair sockets;
+        WireguardIpc ipc{sockets.client()};
+        int receivedValues{};
+        connect(&ipc, &WireguardIpc::receivedValue, this,
+            [&receivedValues](Uapi::Key, const QLatin1String &)
+            {
+                ++receivedValues;
+            });
+
+        WarningCapture warnings;
+        sockets.write(QByteArrayLiteral(
+            "jc=value\njmin=value\njmax=value\n"
+            "s1=value\ns2=value\ns3=value\ns4=value\n"
+            "h1=value\nh2=value\nh3=value\nh4=value\n"
+            "i1=value\ni2=value\ni3=value\ni4=value\ni5=value\n"
+            "errno=0\n"));
+
+        QTRY_COMPARE(receivedValues, 1);
+        QVERIFY(warnings.warnings().isEmpty());
+    }
+
+    void testUnknownResponseFieldStillWarns()
+    {
+        LocalSocketPair sockets;
+        WireguardIpc ipc{sockets.client()};
+        int receivedValues{};
+        connect(&ipc, &WireguardIpc::receivedValue, this,
+            [&receivedValues](Uapi::Key, const QLatin1String &)
+            {
+                ++receivedValues;
+            });
+
+        WarningCapture warnings;
+        sockets.write(QByteArrayLiteral(
+            "ordinary_unknown=visible-value\nerrno=0\n"));
+
+        QTRY_COMPARE(receivedValues, 1);
+        QCOMPARE(warnings.warnings().size(), 1);
+        QVERIFY(warnings.warnings().front().contains(
+            QStringLiteral("ordinary_unknown=visible-value")));
+    }
+
     void testParseLongLong()
     {
         // Valid tests
