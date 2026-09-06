@@ -45,6 +45,7 @@ module PiaUnitTest
     ].tap do |t|
         if Build.windows?
             t << 'wfp_filters'
+            t << 'wireguardservicebackend'
         elsif Build.linux?
             t << 'core_fs'
             t << 'splitdnsinfo'

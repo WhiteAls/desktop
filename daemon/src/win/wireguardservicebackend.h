@@ -27,6 +27,11 @@
 #include <common/src/async.h>
 #include <QLocalSocket>
 
+namespace WireguardServiceBackendDetail
+{
+    QStringList splitAwgConfigLines(const QString &config);
+}
+
 // WireguardServiceBackend is a Wireguard userspace implementation using the
 // Windows service backend.
 //
@@ -50,13 +55,16 @@ private:
 
     static Async<void> asyncCleanup();
 
+private:
+    QString _awgConfig;
+
 public:
     // Do cleanup of this method in case anything was left over from a crashed
     // daemon (stops the PIA WG service if it is running).
     static void cleanup();
 
 public:
-    WireguardServiceBackend();
+    explicit WireguardServiceBackend(QString awgConfig);
     virtual ~WireguardServiceBackend() override;
 
 public:

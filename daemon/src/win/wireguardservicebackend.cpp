@@ -327,6 +327,22 @@ namespace
     };
 }
 
+QStringList WireguardServiceBackendDetail::splitAwgConfigLines(
+    const QString &config)
+{
+    QStringList result;
+    const auto rawLines = config.split(QLatin1Char('\n'));
+    for(const auto &rawLine : rawLines)
+    {
+        QString line{rawLine};
+        if(line.endsWith(QLatin1Char('\r')))
+            line.chop(1);
+        if(!line.isEmpty())
+            result.push_back(std::move(line));
+    }
+    return result;
+}
+
 bool WireguardServiceBackend::_doingInitialCleanup{false};
 
 const QString &WireguardServiceBackend::pipePath()
@@ -404,7 +420,8 @@ void WireguardServiceBackend::cleanup()
         ->runUntilFinished();
 }
 
-WireguardServiceBackend::WireguardServiceBackend()
+WireguardServiceBackend::WireguardServiceBackend(QString awgConfig)
+    : _awgConfig{std::move(awgConfig)}
 {
 }
 
@@ -443,6 +460,12 @@ auto WireguardServiceBackend::createInterface(wg_device &wgDev,
 
         if(wgDev.flags & WGDEVICE_HAS_LISTEN_PORT)
             conf << "ListenPort = " << wgDev.listen_port << endl;
+
+        for(const auto &line :
+            WireguardServiceBackendDetail::splitAwgConfigLines(_awgConfig))
+        {
+            conf << line << endl;
+        }
 
         conf << endl; // Blank line; just for readability
 

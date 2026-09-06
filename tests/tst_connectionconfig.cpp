@@ -136,6 +136,37 @@ private slots:
         QVERIFY(config.methodForcedByAuth() == true);
     }
 
+    void testWireguardAwgConfigRequiresReconnect()
+    {
+        DaemonSettings settings;
+        StateModel state;
+        DaemonAccount account;
+        settings.method(QStringLiteral("wireguard"));
+        account.token("BABA");
+
+        ConnectionConfig initial{settings, state, account};
+        settings.wireguardAwgConfig(QStringLiteral("Jc = 8\nI1 = custom"));
+        ConnectionConfig changed{settings, state, account};
+
+        QVERIFY(initial.wireguardAwgConfig() != changed.wireguardAwgConfig());
+        QVERIFY(initial.hasChanged(changed));
+    }
+
+    void testOpenvpnIgnoresWireguardAwgConfig()
+    {
+        DaemonSettings settings;
+        StateModel state;
+        DaemonAccount account;
+
+        ConnectionConfig initial{settings, state, account};
+        settings.wireguardAwgConfig(QStringLiteral("Jc = 8\nI1 = custom"));
+        ConnectionConfig changed{settings, state, account};
+
+        QVERIFY(initial.wireguardAwgConfig().isEmpty());
+        QVERIFY(changed.wireguardAwgConfig().isEmpty());
+        QVERIFY(!initial.hasChanged(changed));
+    }
+
     void testparseIpv4Host()
     {
         // Valid Ipv4 IP

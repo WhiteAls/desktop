@@ -699,7 +699,10 @@ ConnectionConfig::ConnectionConfig(DaemonSettings &settings, StateModel &state,
     }
     // Capture WireGuard-specific settings
     else if(_method == Method::Wireguard)
+    {
         _wireguardUseKernel = settings.wireguardUseKernel();
+        _wireguardAwgConfig = settings.wireguardAwgConfig();
+    }
 
     // The port forwarding setting is more complex, because changes are
     // applied on the fly in some cases, but require reconnects in others.
@@ -802,6 +805,7 @@ bool ConnectionConfig::hasChanged(const ConnectionConfig &other) const
         openvpnProtocol() != other.openvpnProtocol() ||
         openvpnRemotePort() != other.openvpnRemotePort() ||
         wireguardUseKernel() != other.wireguardUseKernel() ||
+        wireguardAwgConfig() != other.wireguardAwgConfig() ||
         mtu() != other.mtu() ||
         automaticTransport() != other.automaticTransport() ||
         dnsType() != other.dnsType() ||

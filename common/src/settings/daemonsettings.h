@@ -192,6 +192,9 @@ public:
     // Should be a multiple of statsInterval (5)
     JsonField(uint, wireguardPingTimeout, 30)
 
+    // AmneziaWG interface parameters appended to the generated Windows config.
+    JsonField(QString, wireguardAwgConfig, {})
+
     // These settings are legacy and have been moved to client-side settings.
     // They're still present in DaemonSettings so the client can migrate them.
     JsonField(bool, connectOnLaunch, false) // Connect when first client connects

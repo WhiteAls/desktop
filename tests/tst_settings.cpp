@@ -18,6 +18,7 @@
 
 #include <common/src/common.h>
 #include <common/src/settings/locations.h>
+#include <common/src/settings/daemonsettings.h>
 #include <common/src/locations.h>
 #include <QtTest>
 
@@ -372,6 +373,25 @@ class tst_settings : public QObject
     }
 
 private slots:
+    void wireguardAwgConfigDefault()
+    {
+        QVERIFY(DaemonSettings::default_wireguardAwgConfig().isEmpty());
+    }
+
+    void wireguardAwgConfigPersistenceAndReset()
+    {
+        DaemonSettings settings;
+        const auto custom = QStringLiteral("Jc = 8\nI1 = custom");
+        settings.wireguardAwgConfig(custom);
+
+        DaemonSettings restored;
+        QVERIFY(restored.assign(settings.toJsonObject()));
+        QCOMPARE(restored.wireguardAwgConfig(), custom);
+
+        restored.reset_wireguardAwgConfig();
+        QVERIFY(restored.wireguardAwgConfig().isEmpty());
+    }
+
     //Verify that valid locations can be loaded.
     void testTwoValid()
     {

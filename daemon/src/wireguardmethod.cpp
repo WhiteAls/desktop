@@ -508,7 +508,8 @@ void WireguardMethod::createInterface(const WireguardKeypair &clientKeypair,
         _pBackend.reset(new WireguardKernelBackend{});
 #endif
 #if defined(Q_OS_WIN)
-    _pBackend.reset(new WireguardServiceBackend{});
+    _pBackend.reset(new WireguardServiceBackend{
+        _connectionConfig.wireguardAwgConfig()});
 #endif
 #if defined(Q_OS_UNIX)
     // On Linux, the kernel backend is preferred, but if that's not suitable,

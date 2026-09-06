@@ -378,6 +378,8 @@ public:
 
     // For the WireGuard method only, whether to use kernel support if available
     bool wireguardUseKernel() const {return _wireguardUseKernel;}
+    // AmneziaWG interface parameters, captured only for the WireGuard method.
+    const QString &wireguardAwgConfig() const {return _wireguardAwgConfig;}
 
     int mtu() const {return _mtu;}
 
@@ -472,6 +474,7 @@ private:
     Protocol _openvpnProtocol{Protocol::UDP};
     quint16 _openvpnRemotePort{};
     bool _wireguardUseKernel{false};
+    QString _wireguardAwgConfig;
     int _mtu{-1};
     bool _automaticTransport{false};
 
