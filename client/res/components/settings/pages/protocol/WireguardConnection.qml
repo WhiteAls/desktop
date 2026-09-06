@@ -65,6 +65,16 @@ Item {
         info: SettingsMessages.mtuSettingDescription
       }
 
+      MultilineTextboxInput {
+        visible: Qt.platform.os === "windows"
+        label: uiTr("AmneziaWG Interface Parameters")
+        description: uiTr(
+          "Advanced: invalid values can prevent WireGuard from connecting.")
+        setting: DaemonSetting {
+          name: "wireguardAwgConfig"
+        }
+      }
+
       CheckboxInput {
         id: wgUseKernel
 
