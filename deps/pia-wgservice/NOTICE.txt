@@ -1,0 +1,15 @@
+# Notices
+
+`pia-wgservice.exe` combines code from the following MIT-licensed projects:
+
+- `amnezia-vpn/amneziawg-windows`, including the Windows tunnel service,
+  configuration parser, firewall integration, network watcher, and ring logger.
+- `amnezia-vpn/amneziawg-go`, including the AmneziaWG userspace engine and
+  Windows UAPI implementation.
+- `WireGuard/wintun-go`, including the Wintun userspace binding.
+- `pia-foss/desktop-wireguard`, from which the PIA-compatible command-line
+  contract and interface maintenance behavior were derived.
+
+The PIA wrapper modifications are Copyright (C) 2026 Private Internet Access
+contributors and are released under the MIT License. Preserve the upstream
+license files and source-file copyright notices when redistributing this binary.

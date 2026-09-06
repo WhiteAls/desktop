@@ -129,6 +129,11 @@ module PiaDesktop
 
         # Install LICENSE.txt
         stage.install('LICENSE.txt', :res)
+        if(Build.windows?)
+            FileList['deps/pia-wgservice/*'].each do |license|
+                stage.install(license, 'licenses/pia-wgservice/')
+            end
+        end
 
         # Download server lists to ship preloaded copies with the app.  These tasks
         # depend on version.txt so they're refreshed periodically (whenver a new commit
