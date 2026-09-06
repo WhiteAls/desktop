@@ -59,6 +59,7 @@ QtObject {
   readonly property var bypassSubnets: NativeDaemon.settings.bypassSubnets
   readonly property bool wireguardUseKernel: NativeDaemon.settings.wireguardUseKernel
   readonly property int wireguardPingTimeout: NativeDaemon.settings.wireguardPingTimeout
+  readonly property string wireguardAwgConfig: NativeDaemon.settings.wireguardAwgConfig
   readonly property bool persistDaemon: NativeDaemon.settings.persistDaemon
   readonly property int sessionCount: NativeDaemon.settings.sessionCount
   readonly property int successfulSessionCount: NativeDaemon.settings.successfulSessionCount
