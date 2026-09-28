@@ -7,8 +7,9 @@ require 'json'
 # Build determines the overall build directory (based on configuration, etc.)
 # and creates a per-component build directory for this component.
 class Build
-    # Captures v3.4.5.beta.1-RC1 into groups [3, 4, 5, beta.1-RC1]
-    version_regex = /v(\d+)\.(\d+)\.(\d+)(?:\.(.+))?/
+    # Captures v3.4.5.beta.1-RC1 into groups [3, 4, 5, beta.1-RC1]; the "v"
+    # is optional because upstream tags omit it (e.g. 3.7.2)
+    version_regex = /v?(\d+)\.(\d+)\.(\d+)(?:\.(.+))?/
     # Captures beta.1-RC1 into groups [beta.1, RC1]
     release_candidate_regex = /(.+)[-\/](.*)/
     # Retrieve the newest parent tag indicating the version.
