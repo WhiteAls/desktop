@@ -2330,6 +2330,8 @@ void Daemon::vpnStateChanged(VPNConnection::State state,
         _state.connectionLost(0);
         _state.proxyUnreachable(0);
         _state.dnsConfigFailed(0);
+        _state.wireguardAwgConfigError(0);
+        _state.wireguardAwgConfigErrorText({});
     }
 
     // If we've connected, queue a notification to dump the routing table.  This
@@ -2363,6 +2365,10 @@ void Daemon::vpnError(const Error& error)
         case Error::Code::OpenVPNProxyAuthenticationError:
         case Error::Code::OpenVPNProxyError:
             _state.proxyUnreachable(QDateTime::currentMSecsSinceEpoch());
+            break;
+        case Error::Code::WireguardAwgConfigRejected:
+            _state.wireguardAwgConfigError(QDateTime::currentMSecsSinceEpoch());
+            _state.wireguardAwgConfigErrorText(error.params().value(0));
             break;
         default:
             break;

@@ -73,6 +73,12 @@ Item {
         setting: DaemonSetting {
           name: "wireguardAwgConfig"
         }
+        errorText: {
+          if(Daemon.state.wireguardAwgConfigError <= 0)
+            return ""
+          return Daemon.state.wireguardAwgConfigErrorText ||
+            uiTr("The tunnel service rejected these parameters.")
+        }
       }
 
       CheckboxInput {

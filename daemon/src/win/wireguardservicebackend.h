@@ -30,6 +30,10 @@
 namespace WireguardServiceBackendDetail
 {
     QStringList splitAwgConfigLines(const QString &config);
+
+    // Find the most recent configuration error in the tunnel service log
+    // (output of pia-wgservice /dumplog); empty if there is none.
+    QString findConfigError(const QString &serviceLog);
 }
 
 // WireguardServiceBackend is a Wireguard userspace implementation using the

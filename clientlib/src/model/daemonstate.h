@@ -107,6 +107,8 @@ public:
     JsonField(int, dedicatedIpDaysRemaining, {})
     JsonField(quint64, dedicatedIpChanged, {})
     JsonField(qint64, dnsConfigFailed, {})
+    JsonField(qint64, wireguardAwgConfigError, {})
+    JsonField(QString, wireguardAwgConfigErrorText, {})
     JsonField(bool, invalidClientExit, {})
     JsonField(bool, killedClient, {})
     JsonField(qint64, hnsdFailing, {})

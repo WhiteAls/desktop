@@ -29,6 +29,7 @@ FocusScope {
   property Setting setting
   property string label: ""
   property string description: ""
+  property string errorText: ""
   readonly property var currentValue: setting ? setting.currentValue : undefined
   readonly property string text: control.text
   property bool edited: false
@@ -76,7 +77,8 @@ FocusScope {
       color: Theme.settings.inputTextboxBackgroundColor
       radius: 3
       border.width: control.activeFocus ? 2 : 1
-      border.color: Theme.settings.inputTextboxBorderColor
+      border.color: root.errorText ? Theme.settings.inputTextboxInvalidBorderColor
+                                   : Theme.settings.inputTextboxBorderColor
 
       ThemedScrollView {
         id: scrollView
@@ -116,6 +118,13 @@ FocusScope {
     InputDescription {
       Layout.fillWidth: true
       text: root.description
+    }
+
+    InputDescription {
+      Layout.fillWidth: true
+      visible: !!root.errorText
+      text: root.errorText
+      color: Theme.settings.inputTextboxInvalidBorderColor
     }
   }
 

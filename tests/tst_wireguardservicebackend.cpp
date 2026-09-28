@@ -39,6 +39,35 @@ private slots:
             QVERIFY(!line.contains(QLatin1Char('\r')));
         }
     }
+
+    void findConfigErrorReturnsLatest()
+    {
+        const auto log = QStringLiteral(
+            "2026-09-28 12:00:00.000000: [TUN] Unable to load configuration"
+            " from path: Invalid Jc: \"abc\"\n"
+            "2026-09-28 12:00:05.000000: [TUN] Starting pia-wgservice\n"
+            "2026-09-28 12:00:05.100000: [TUN] Unable to set device"
+            " configuration: IPC error -22: failed to parse I1: bad tag\n"
+            "2026-09-28 12:00:05.200000: [TUN] Shutting down\n");
+
+        QCOMPARE(WireguardServiceBackendDetail::findConfigError(log),
+                 QStringLiteral("failed to parse I1: bad tag"));
+    }
+
+    void findConfigErrorLoadConfiguration()
+    {
+        QCOMPARE(WireguardServiceBackendDetail::findConfigError(QStringLiteral(
+                     "2026-09-28 12:00:00.000000: [TUN] Unable to load"
+                     " configuration from path: Invalid S1: \"70000\"\r\n")),
+                 QStringLiteral("Invalid S1: \"70000\""));
+    }
+
+    void findConfigErrorWithoutError()
+    {
+        QVERIFY(WireguardServiceBackendDetail::findConfigError(QStringLiteral(
+            "2026-09-28 12:00:00.000000: [TUN] Starting pia-wgservice\n")).isEmpty());
+        QVERIFY(WireguardServiceBackendDetail::findConfigError({}).isEmpty());
+    }
 };
 
 QTEST_GUILESS_MAIN(tst_wireguardservicebackend)

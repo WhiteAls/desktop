@@ -479,3 +479,22 @@ Async<void> WinServiceState::stopIfRunning()
             }
         });
 }
+
+DWORD WinServiceState::queryServiceSpecificExitCode() const
+{
+    SERVICE_STATUS_PROCESS status{};
+    DWORD needed{};
+    if(!_service || !::QueryServiceStatusEx(_service, SC_STATUS_PROCESS_INFO,
+                                            reinterpret_cast<LPBYTE>(&status),
+                                            sizeof(status), &needed))
+    {
+        kapps::core::WinErrTracer error{::GetLastError()};
+        qWarning() << "Unable to query exit code of service" << _serviceName
+            << "-" << error;
+        return 0;
+    }
+
+    if(status.dwWin32ExitCode != ERROR_SERVICE_SPECIFIC_ERROR)
+        return 0;
+    return status.dwServiceSpecificExitCode;
+}

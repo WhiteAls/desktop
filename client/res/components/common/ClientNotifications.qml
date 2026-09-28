@@ -284,6 +284,23 @@ Item {
     timestampValue: Daemon.state.dnsConfigFailed
   }
 
+  // The WireGuard tunnel service rejected the AmneziaWG parameters; retries
+  // keep failing until the parameters are fixed
+  TimestampNotificationStatus {
+    id: wireguardAwgConfigError
+    title: errorHeaderTitle
+    message: uiTr("AmneziaWG parameters were rejected.")
+    tipText: Daemon.state.wireguardAwgConfigErrorText ||
+      uiTr("Check the AmneziaWG Interface Parameters in the Protocols settings.")
+    severity: severities.error
+    links: [{
+      text: uiTr("Settings"),
+      clicked: function() {showConnectionPage()}
+    }]
+    dismissible: false
+    timestampValue: Daemon.state.wireguardAwgConfigError
+  }
+
   // hnsd is failing - only occurs in Connected state, prevents any DNS
   // resolution when active
   TimestampNotificationStatus {
@@ -643,6 +660,7 @@ Item {
     vpnMissingIptables,
     authFailure,
     dnsConfigFailed,
+    wireguardAwgConfigError,
     hnsdFailing,
     // Possibly unexpected conditions
     winIsElevated, // May cause other issues, list first

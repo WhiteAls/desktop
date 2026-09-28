@@ -62,6 +62,8 @@ QtObject {
   readonly property double updateDownloadFailure: NativeDaemon.state.updateDownloadFailure
   readonly property string updateVersion: NativeDaemon.state.updateVersion
   readonly property double dnsConfigFailed: NativeDaemon.state.dnsConfigFailed
+  readonly property double wireguardAwgConfigError: NativeDaemon.state.wireguardAwgConfigError
+  readonly property string wireguardAwgConfigErrorText: NativeDaemon.state.wireguardAwgConfigErrorText
   readonly property bool tapAdapterMissing: NativeDaemon.state.tapAdapterMissing
   readonly property string netExtensionState: NativeDaemon.state.netExtensionState
   readonly property bool connectionProblem: NativeDaemon.state.connectionProblem

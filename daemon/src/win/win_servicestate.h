@@ -147,6 +147,10 @@ public:
     // service.
     Async<void> stopIfRunning();
 
+    // Service-specific exit code of the stopped service, or 0 if it did not
+    // stop with a service-specific error.
+    DWORD queryServiceSpecificExitCode() const;
+
 signals:
     void stateChanged(State newState, DWORD newPid);
 

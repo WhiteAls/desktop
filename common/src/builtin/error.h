@@ -131,6 +131,7 @@ public:
         WireguardProcessFailed,
         WireguardNotResponding,
         WireguardPingTimeout,
+        WireguardAwgConfigRejected, // Tunnel service rejected the AmneziaWG parameters
 
         // Connectivity errors for multiple VPN methods
         VPNConfigInvalid = 1800,
@@ -168,6 +169,7 @@ public:
 
     Q_INVOKABLE Code code() const { return _code; }
     SystemCode systemCode() const { return _systemCode; }
+    const QStringList &params() const { return _params; }
     Q_INVOKABLE QString errorString() const;
     QString errorDescription() const;
     QJsonObject toJsonObject() const;

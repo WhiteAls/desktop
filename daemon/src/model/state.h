@@ -431,6 +431,10 @@ public:
 
     // We failed to configure DNS on linux
     JsonProperty(qint64, dnsConfigFailed);
+    // The WireGuard tunnel service rejected the AmneziaWG parameters
+    // (timestamp), and the reason reported by the service (may be empty).
+    JsonProperty(qint64, wireguardAwgConfigError);
+    JsonProperty(QString, wireguardAwgConfigErrorText);
     // Flag to indicate that the last time a client exited, it was an invalid exit
     // and an message should possibly be displayed
     JsonProperty(bool, invalidClientExit);

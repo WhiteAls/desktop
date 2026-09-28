@@ -29,6 +29,8 @@
 #include "win_daemon.h" // WinNetworkAdapter
 #include <kapps_core/src/win/win_error.h>
 #include <QElapsedTimer>
+#include <QProcess>
+#include <QRegularExpression>
 
 #include <WS2tcpip.h>   // inet_pton()
 #pragma comment(lib, "ws2_32.lib")
@@ -343,6 +345,78 @@ QStringList WireguardServiceBackendDetail::splitAwgConfigLines(
     return result;
 }
 
+QString WireguardServiceBackendDetail::findConfigError(
+    const QString &serviceLog)
+{
+    // Logged by pia-wgservice before it exits with ErrorLoadConfiguration or
+    // ErrorDeviceSetConfig
+    static const QLatin1String markers[]{
+        QLatin1String{"Unable to load configuration from path: "},
+        QLatin1String{"Unable to set device configuration: "},
+    };
+    static const QRegularExpression ipcErrorPrefix{
+        QStringLiteral("^IPC error -?\\d+: ")};
+
+    const auto lines = serviceLog.split(QLatin1Char('\n'));
+    for(auto itLine = lines.crbegin(); itLine != lines.crend(); ++itLine)
+    {
+        for(const auto &marker : markers)
+        {
+            auto markerIdx = itLine->indexOf(marker);
+            if(markerIdx >= 0)
+            {
+                return itLine->mid(markerIdx + marker.size()).trimmed()
+                    .remove(ipcErrorPrefix);
+            }
+        }
+    }
+    return {};
+}
+
+namespace
+{
+    // Service-specific exit codes of pia-wgservice caused by its
+    // configuration (services.Error in pia-awg-service)
+    enum : DWORD
+    {
+        WgServiceErrorLoadConfiguration = 2,
+        WgServiceErrorDeviceSetConfig = 7,
+    };
+
+    // Exec::cmd() isn't used because it would trace the entire service log
+    QString readServiceConfigError()
+    {
+        QProcess dump;
+        dump.start(Path::WireguardServiceExecutable,
+                   {QStringLiteral("/dumplog"), Path::ConfigLogFile});
+        if(!dump.waitForFinished(5000) ||
+           dump.exitStatus() != QProcess::NormalExit || dump.exitCode() != 0)
+        {
+            qWarning() << "Unable to read WireGuard service log -"
+                << dump.errorString();
+            dump.kill();
+            dump.waitForFinished(1000);
+            return {};
+        }
+        return WireguardServiceBackendDetail::findConfigError(
+            QString::fromUtf8(dump.readAllStandardOutput()));
+    }
+
+    Error serviceStartError(DWORD exitCode)
+    {
+        if(exitCode != WgServiceErrorLoadConfiguration &&
+           exitCode != WgServiceErrorDeviceSetConfig)
+        {
+            return Error{HERE, Error::Code::WireguardCreateDeviceFailed};
+        }
+
+        const auto reason = readServiceConfigError();
+        qWarning() << "WireGuard service rejected AmneziaWG parameters -"
+            << reason;
+        return Error{HERE, Error::Code::WireguardAwgConfigRejected, reason};
+    }
+}
+
 bool WireguardServiceBackend::_doingInitialCleanup{false};
 
 const QString &WireguardServiceBackend::pipePath()
@@ -536,7 +610,7 @@ auto WireguardServiceBackend::createInterface(wg_device &wgDev,
             Q_ASSERT(wgServiceState()); // Postcondition of openWgServiceState()
             return wgServiceState()->startService();
         })
-        ->next([](const Error &err) -> Async<std::shared_ptr<NetworkAdapter>>
+        ->next([awgConfig = _awgConfig](const Error &err) -> Async<std::shared_ptr<NetworkAdapter>>
         {
             // Remove the config file, prevent the user from accidentally
             // starting the service with stale configuration
@@ -549,7 +623,16 @@ auto WireguardServiceBackend::createInterface(wg_device &wgDev,
             {
                 // Startup failed, reject with a more specific error
                 qWarning() << "Couldn't start WireGuard service:" << err;
-                return Async<std::shared_ptr<NetworkAdapter>>::reject({HERE, Error::Code::WireguardCreateDeviceFailed});
+                if(awgConfig.isEmpty())
+                    return Async<std::shared_ptr<NetworkAdapter>>::reject({HERE, Error::Code::WireguardCreateDeviceFailed});
+
+                // The exit code is only available once the service has stopped
+                return wgServiceState()->waitForStop()
+                    ->next([](const Error &) -> Async<std::shared_ptr<NetworkAdapter>>
+                    {
+                        return Async<std::shared_ptr<NetworkAdapter>>::reject(
+                            serviceStartError(wgServiceState()->queryServiceSpecificExitCode()));
+                    });
             }
 
             // The service was started.  The service reports that it's started
